@@ -1,5 +1,6 @@
 import { Slot } from "expo-router";
-import { Provider } from "react-redux";
+import { Provider, useDispatch } from "react-redux";
+
 import store from "../src/store";
 
 export default function Layout() {
