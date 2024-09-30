@@ -1,6 +1,6 @@
-import { combineReducers } from "redux";
+import { combineReducers } from 'redux';
 
-import weatherReducer from "./weather/reducer";
+import weatherReducer from './weather/reducer';
 const rootReducer = combineReducers({
   weather: weatherReducer,
 });

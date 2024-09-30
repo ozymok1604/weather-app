@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from 'react';
 import {
   View,
   TextInput,
@@ -6,59 +6,49 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-} from "react-native";
-import axios from "axios";
+} from 'react-native';
 
-const CitySearch = () => {
-  const [query, setQuery] = useState("");
-  const [cities, setCities] = useState([]);
+import { CitySearchProps } from '@types';
 
-  const apiKey = "ce767c132de6a62ff022bc27e0f2544e"; // Введіть свій API-ключ OpenWeatherMap
-
-  const searchCities = async (text) => {
-    setQuery(text);
-    if (text?.length > 2) {
-      try {
-        const response = await fetch(
-          `https://api.openweathermap.org/geo/1.0/direct?q=${text}&limit=5&appid=${apiKey}`
-        );
-        // setCities(response.data
-        console.log(response?.data);
-      } catch (error) {
-        console.log(error);
-      }
-    } else {
-      setCities([]);
-    }
-  };
-
-  const selectCity = (city) => {
-    // Вибір міста і отримання його координат
-    console.log(
-      `Selected city: ${city.name}, Lon: ${city.lon}, Lat: ${city.lat}`
-    );
-    setQuery(city.name);
-    setCities([]); // Очищаємо список після вибору
-  };
-
+const CitySearch: React.FC<CitySearchProps> = ({
+  cities,
+  onTextChange,
+  value,
+  onCitySelect,
+}) => {
   return (
     <View style={styles.container}>
       <TextInput
         placeholderTextColor="white"
         style={styles.input}
         placeholder="Search city"
-        value={query}
-        onChangeText={(text) => searchCities(text)}
+        value={value}
+        onChangeText={onTextChange}
       />
-      {cities.length > 0 && (
+
+      {cities?.length > 0 && (
         <FlatList
+          style={styles.list}
           data={cities}
-          keyExtractor={(item) => item.lon.toString() + item.lat.toString()}
+          keyExtractor={item =>
+            item.properties.lon.toString() + item.properties.lat.toString()
+          }
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => selectCity(item)}>
-              <Text
-                style={styles.cityItem}
-              >{`${item.name}, ${item.country}`}</Text>
+            <TouchableOpacity
+              style={styles.cityItem}
+              onPress={() =>
+                onCitySelect({
+                  city: item.properties?.city,
+                  coords: {
+                    latitude: item.properties.lat,
+                    longitude: item.properties.lon,
+                  },
+                })
+              }
+            >
+              <Text style={styles.cityName}>
+                {`${item.properties?.city}, ${item.properties?.address_line1}`}
+              </Text>
             </TouchableOpacity>
           )}
         />
@@ -70,24 +60,42 @@ const CitySearch = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
-    width: "90%",
+    width: '90%',
+    position: 'relative', // Додаємо цю властивість
   },
   input: {
-    width: "100%",
+    width: '100%',
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: '#ddd',
     padding: 10,
     borderRadius: 5,
+    fontSize: 20,
     marginBottom: 10,
-    color: "white",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    color: 'white',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  cityName: {
+    padding: 10,
+    fontSize: 16,
+    color: 'white',
+    marginVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
   cityItem: {
-    padding: 10,
-
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    width: '100%',
+  },
+  list: {
+    position: 'absolute',
+    top: 60,
+    left: 10,
+    right: 10,
+    backgroundColor: 'rgba(0, 0, 255, 0.3)',
+    borderRadius: 10,
+    elevation: 5,
+    shadowRadius: 4,
+    zIndex: 20,
   },
 });
 
-export default CitySearch;
+export { CitySearch };

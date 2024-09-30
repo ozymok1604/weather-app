@@ -1,4 +1,20 @@
 {
-  "compilerOptions": {},
+  "compilerOptions": { 
+    "baseUrl": ".",  
+    
+  "paths": {
+    
+    "*": [
+        "src/*"
+      ],
+    "@ui": ["src/shared/ui/index"],
+    "@actions":["src/store/weather/actions"],
+    "@types":["types"],
+    "@hooks":["src/store/hooks"],
+    "@utils":["src/utils/index"],
+    "@assets":["src/shared/assets/*"]
+    
+  }
+},
   "extends": "expo/tsconfig.base"
 }

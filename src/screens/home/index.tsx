@@ -1,156 +1,209 @@
+import React, { useEffect, useState } from 'react';
 import {
-  Button,
+  ActivityIndicator,
   ImageBackground,
   SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
   TouchableOpacity,
   View,
-} from "react-native";
-import { MainWeather } from "../../shared/ui/main-weather";
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { getAuth, signOut } from "@firebase/auth";
-import { useRouter } from "expo-router";
+  Text,
+  StatusBar,
+  Platform,
+  StyleSheet,
+  KeyboardAvoidingView,
+} from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import * as Location from 'expo-location';
+import { getAuth, signOut } from '@firebase/auth';
+import { useRouter, useRootNavigationState } from 'expo-router';
+import { useSelector } from 'react-redux';
 import {
+  getCities,
   getCurrentWeather,
-  searchCity,
   setLocation,
-} from "../../store/weather/actions";
-import { RootStore } from "../../../types";
-import * as Location from "expo-location";
-import { useAppDispatch } from "../../store/hooks";
+  setCities,
+  setIsConnectionModalOpen,
+} from '@actions';
+import { useAppDispatch } from '@hooks';
+import { RootStore } from '@types';
 
-import { WheatherDetails } from "../../shared/ui/wheather-details";
-import CitySearch from "../../shared/ui/search";
-import * as SecureStore from "expo-secure-store";
-import { fontSize, spaces } from "../../styles";
-import * as colors from "../../styles/colors";
+import NetInfo from '@react-native-community/netinfo';
+import {
+  CitySearch,
+  NotConnectedModal,
+  WheatherDetails,
+  MainWeather,
+} from '@ui';
 
-const HomeScreen = ({ user, handleAuthentication }) => {
+const HomeScreen = () => {
   const dispatch = useAppDispatch();
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [searchValue, setSearchValue] = useState("");
-
-  const auth = getAuth();
   const router = useRouter();
-
-  const handleLogout = async () => {
-    try {
-      // Sign out the user
-      await signOut(auth);
-
-      // Delete stored credentials from SecureStore
-      await SecureStore.deleteItemAsync("email");
-      await SecureStore.deleteItemAsync("password");
-
-      console.log("User logged out and credentials cleared from SecureStore");
-
-      // Navigate back to the authentication screen after logout
-      router.replace("/auth");
-    } catch (error) {
-      console.error("Error during logout:", error.message);
-    }
-  };
-
-  const currentLocation = useSelector(
-    (store: RootStore) => store.weather.location
-  );
-
+  const auth = getAuth() as any;
+  const [searchValue, setSearchValue] = useState('');
+  const rootNavigationState = useRootNavigationState();
+  const cities = useSelector((store: RootStore) => store.weather.cities);
   const currentWeather = useSelector(
     (store: RootStore) => store.weather.currentWeather
   );
-
-  const hourlyWeather = useSelector(
-    (store: RootStore) => store.weather.hourlyWeather
+  const location = useSelector((store: RootStore) => store.weather.location);
+  const isConnectionModalOpen = useSelector(
+    (store: RootStore) => store.weather.isConnectionModalOpen
   );
-  console.log(hourlyWeather, "gggg");
 
   useEffect(() => {
-    // dispatch(searchCity(searchValue));
-    console.log(searchValue, "retert");
-  }, [searchValue]);
+    const timer = setTimeout(() => {
+      if (rootNavigationState?.key && auth?.apiKey && !auth?.currentUser) {
+        router.replace('/auth');
+      }
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [auth, rootNavigationState]);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      if (!state.isConnected) {
+        dispatch(setIsConnectionModalOpen(true));
+      }
+    });
+
+    return () => unsubscribe();
+  }, [dispatch]);
+
+  const onConnectionModalClose = () => {
+    dispatch(setIsConnectionModalOpen(false));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      await SecureStore.deleteItemAsync('email');
+      await SecureStore.deleteItemAsync('password');
+      console.log('User logged out and credentials cleared from SecureStore');
+      router.replace('/auth');
+    } catch (error) {
+      console.error('Error during logout:', error.message);
+    }
+  };
 
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setErrorMsg("Permission to access location was denied");
+      if (status !== 'granted') {
         return;
       }
-
       let location = await Location.getCurrentPositionAsync({});
-
       dispatch(setLocation(location));
     })();
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
-    if (currentLocation?.coords) {
+    if (location?.coords) {
       dispatch(
-        getCurrentWeather(
-          currentLocation.coords.latitude,
-          currentLocation.coords.longitude
-        )
+        getCurrentWeather(location.coords.latitude, location.coords.longitude)
       );
     }
-  }, [currentLocation]);
+  }, [location, dispatch]);
+
+  useEffect(() => {
+    dispatch(getCities(searchValue));
+  }, [searchValue, dispatch]);
+
+  const onCitySelect = location => {
+    dispatch(setLocation(location));
+    dispatch(setCities([]));
+  };
+
+  const weatherMain = currentWeather?.weather?.[0]?.main || 'Clear';
+
+  const background = (() => {
+    switch (weatherMain) {
+      case 'Clear':
+        return require('../../shared/assets/clear.jpg');
+      case 'Clouds':
+        return require('../../shared/assets/clouds.jpg');
+      case 'Rain':
+        return require('../../shared/assets/rain.jpg');
+      default:
+        return require('../../shared/assets/rain.jpg');
+    }
+  })();
   return (
     <ImageBackground
-      source={require("../../shared/assets/blue.jpg")}
+      source={background}
       style={styles.background}
-      resizeMode="cover" // Покриває весь екран
+      resizeMode="cover"
     >
-      <SafeAreaView>
-        <ScrollView>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoidingView}
+        >
+          <NotConnectedModal
+            visible={isConnectionModalOpen}
+            onClose={onConnectionModalClose}
+          />
           <View style={styles.contentContainer}>
             <View style={styles.header}>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleLogout}>
                 <Text style={styles.logoutTxt}>Logout</Text>
               </TouchableOpacity>
             </View>
-            <CitySearch />
-
-            {currentWeather?.weather && (
+            <CitySearch
+              onCitySelect={onCitySelect}
+              onTextChange={setSearchValue}
+              cities={cities}
+              value={searchValue}
+            />
+            {currentWeather?.weather ? (
               <>
-                <MainWeather weatherData={currentWeather} />
+                <MainWeather
+                  city={location.city}
+                  weatherData={currentWeather}
+                />
                 <WheatherDetails weatherData={currentWeather} />
               </>
+            ) : (
+              <ActivityIndicator />
             )}
           </View>
-        </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ImageBackground>
   );
 };
 
-export default HomeScreen;
-
 const styles = StyleSheet.create({
-  container: {},
   background: {
     flex: 1,
-    width: "100%", // Ширина 100% екрану
-    height: "100%", // Висота 100% екрану
+    width: '100%',
+    height: '100%',
+  },
+  safeArea: {
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    flex: 1,
   },
   contentContainer: {
     paddingVertical: 20,
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    width: "100%",
-    height: "100%",
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: '100%',
+    height: '100%',
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    width: "100%",
-    paddingHorizontal: spaces.l,
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    width: '100%',
+    paddingHorizontal: 20,
+    alignItems: 'center',
   },
   logoutTxt: {
-    color: colors.red,
-    fontSize: fontSize.l,
+    color: 'red',
+    fontSize: 18,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
 });
+
+export default HomeScreen;
