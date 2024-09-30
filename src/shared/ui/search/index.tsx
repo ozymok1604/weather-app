@@ -36,15 +36,16 @@ const CitySearch: React.FC<CitySearchProps> = ({
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.cityItem}
-              onPress={() =>
+              onPress={() => {
+                onTextChange(item.properties?.city);
                 onCitySelect({
                   city: item.properties?.city,
                   coords: {
                     latitude: item.properties.lat,
                     longitude: item.properties.lon,
                   },
-                })
-              }
+                });
+              }}
             >
               <Text style={styles.cityName}>
                 {`${item.properties?.city}, ${item.properties?.address_line1}`}
@@ -90,9 +91,9 @@ const styles = StyleSheet.create({
     top: 60,
     left: 10,
     right: 10,
-    backgroundColor: 'rgba(0, 0, 255, 0.3)',
+    backgroundColor: 'grey',
     borderRadius: 10,
-    elevation: 5,
+
     shadowRadius: 4,
     zIndex: 20,
   },

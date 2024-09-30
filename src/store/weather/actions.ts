@@ -58,7 +58,6 @@ export const getCurrentWeather =
     try {
       // Спроба отримати дані з API
       const response = await apiService.get(`/weather?lat=${lat}&lon=${lon}`);
-      console.log(response.data, 'hour');
 
       // Зберігаємо дані в async storage
       await AsyncStorage.setItem(
@@ -73,6 +72,7 @@ export const getCurrentWeather =
 
       // Якщо є помилка, спробуємо витягнути дані з async storage
       try {
+        dispatch(setIsConnectionModalOpen(true));
         const jsonValue = await AsyncStorage.getItem('currentWeather');
         if (jsonValue != null) {
           const storedData = JSON.parse(jsonValue);
@@ -102,6 +102,7 @@ export const getCities = (search: string) => async dispatch => {
 
     dispatch(setCities(data?.features));
   } catch (e) {
+    dispatch(setIsConnectionModalOpen(true));
     console.log(e);
   }
 };

@@ -68,6 +68,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     padding: 10,
+    zIndex: -1,
   },
   icon: {
     width: 20,

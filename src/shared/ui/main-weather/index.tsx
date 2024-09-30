@@ -3,7 +3,6 @@ import { kelvinToCelsius } from '@utils';
 import { MainWeatherProps } from '@types';
 
 const MainWeather: React.FC<MainWeatherProps> = ({ city, weatherData }) => {
-  console.log(weatherData.main.feels_like);
   return (
     <View style={styles.container}>
       <Text style={styles.city}>
@@ -31,7 +30,10 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     flexDirection: 'column',
     alignItems: 'center',
-    zIndex: 0, // Можна зменшити zIndex, щоб він не перекривав список
+
+    // The image will be shown on the
+    // bottom of the heading
+    zIndex: -1,
   },
   city: {
     fontSize: 24,

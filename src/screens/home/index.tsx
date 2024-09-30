@@ -110,7 +110,10 @@ const HomeScreen = () => {
 
   const onCitySelect = location => {
     dispatch(setLocation(location));
-    dispatch(setCities([]));
+
+    setTimeout(() => {
+      dispatch(setCities([]));
+    }, 1000);
   };
 
   const weatherMain = currentWeather?.weather?.[0]?.main || 'Clear';
@@ -118,13 +121,13 @@ const HomeScreen = () => {
   const background = (() => {
     switch (weatherMain) {
       case 'Clear':
-        return require('../../shared/assets/clear.jpg');
+        return require('@assets/clear.jpg');
       case 'Clouds':
-        return require('../../shared/assets/clouds.jpg');
+        return require('@assets/clouds.jpg');
       case 'Rain':
-        return require('../../shared/assets/rain.jpg');
+        return require('@assets/rain.jpg');
       default:
-        return require('../../shared/assets/rain.jpg');
+        return require('@assets/rain.jpg');
     }
   })();
   return (
@@ -189,6 +192,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     width: '100%',
     height: '100%',
+    position: 'absolute',
   },
   header: {
     flexDirection: 'row',
